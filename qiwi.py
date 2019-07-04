@@ -58,12 +58,8 @@ class Qiwi(QiwiBase):
         else:
             return False
 
-    def find_pay(self, comment, my_list):
+    def find_pay(self, comments_input, my_list):
         for i in my_list['data']:
-            print(i)
+            if i['comment'] == comments_input:
+                return i
 
-
-test = Qiwi('')
-test.get_profile()
-my_list = test.get_history()
-test.find_pay('12', my_list)

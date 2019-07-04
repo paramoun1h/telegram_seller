@@ -1,33 +1,45 @@
-from sqlalchemy import create_engine, Table, Column, Integer, String, MetaData, ForeignKey
-from sqlalchemy.orm import mapper,sessionmaker
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy import create_engine
+from sqlalchemy.sql import exists
 
-engine = create_engine('sqlite:///test.db:', echo=True)
-Session = sessionmaker(bind=engine)
-session=Session()
-metadata = MetaData()
-users_table = Table('HistoryPaid', metadata,
-                    Column('id', Integer, primary_key=True),
-                    Column('id_transaktion', String(40)),
-                    Column('date', String(40)),
-                    Column('total', String(40)),
-                    Column('comment', String(40)))
-metadata.create_all(engine)
+Base = declarative_base()
 
 
-class HistoryOperation:
+class History(Base):
+    __tablename__ = 'HistoryPaid'
+    id = Column(Integer, primary_key=True)
+    date = Column(String(40), nullable=False)
+    total = Column(Integer, nullable=False)
+    comment = Column(String(40), nullable=False)
 
-    def __init__(self, id_transaktion, date, total, comment):
-        self.id_transaktion = id_transaktion
-        self.date = date
-        self.total = total
-        self.comment = comment
+    def __str__(self):
+        return f'{self.date},{self.total},{self.comment}'
 
-    def __repr__(self):
-        return f"HistoryOperation<{self.id_transaktion},{self.date},{self.total},{self.comment}>"
 
-print (mapper(HistoryOperation, users_table))
-element=HistoryOperation('121212','2222','222','31')
-session.add(element)
-session.commit()
-# print(element)
-# print(element.comment)
+class Operation:
+    def __init__(self):
+        engine = create_engine('sqlite:///sqlalchemy_example.db?check_same_thread=False')
+        Base.metadata.create_all(engine)
+        DBSession = scoped_session(sessionmaker(bind=engine))
+        self.session = DBSession()
+
+    def select(self, comment, date):
+        result = self.session.query(History).filter(History.comment == comment,
+                                                    History.date == date).first()
+        return result
+
+    def commit(self, comment, date):
+
+        result = self.session.query(
+            exists().where(History.comment == comment)).scalar()
+        if result == True:
+            elements = self.session.query(History).filter(History.comment == comment).first()
+            elements.date = date
+            elements.total += 100
+            self.session.commit()
+        else:
+            newHistory = History(date=date, total=100, comment=comment)
+            self.session.add(newHistory)
+        self.session.commit()
