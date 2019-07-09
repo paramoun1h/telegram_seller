@@ -62,4 +62,3 @@ class Qiwi(QiwiBase):
         for i in my_list['data']:
             if i['comment'] == comments_input:
                 return i
-

@@ -34,7 +34,7 @@ class Operation:
 
         result = self.session.query(
             exists().where(History.comment == comment)).scalar()
-        if result == True:
+        if result:
             elements = self.session.query(History).filter(History.comment == comment).first()
             elements.date = date
             elements.total += 100
